@@ -4,7 +4,7 @@ export interface IUser extends Document {
   _id: string;
   name: string;
   email?: string;
-  password: string;
+  pin: string;
   phoneNumber: string;
   wallet: string;
   createdAt: Date;
@@ -20,7 +20,7 @@ const userSchema = new Schema(
     email: {
       type: String,
     },
-    password: {
+    pin: {
       type: String,
       required: true,
     },

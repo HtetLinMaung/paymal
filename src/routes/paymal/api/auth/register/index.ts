@@ -1,8 +1,9 @@
 import { brewBlankExpressFunc, throwErrorResponse } from "code-alchemy";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import User from "../../../../models/User";
-import connectMongoose from "../../../../utils/connect-mongoose";
+import User from "../../../../../models/User";
+import connectMongoose from "../../../../../utils/connect-mongoose";
+import Wallet from "../../../../../models/Wallet";
 
 export default brewBlankExpressFunc(async (req, res) => {
   await connectMongoose();
@@ -13,9 +14,9 @@ export default brewBlankExpressFunc(async (req, res) => {
     throwErrorResponse(400, "Please provide all required fields");
   }
 
-  // Check if the pin is valid (e.g., 4-6 digits)
-  if (!/^\d{4,6}$/.test(pin)) {
-    return res.status(400).json({ message: "PIN must be 4 to 6 digits" });
+  // Check if the pin is valid (e.g., 6 digits)
+  if (!/^\d{6}$/.test(pin)) {
+    return res.status(400).json({ message: "PIN must be 6 digits" });
   }
 
   // Check if the phone number already exists
@@ -30,6 +31,17 @@ export default brewBlankExpressFunc(async (req, res) => {
     phoneNumber,
     pin: await bcrypt.hash(pin, 10),
   });
+  await user.save();
+
+  // Create a new wallet for the user
+  const wallet = new Wallet({
+    balance: 0,
+    transactions: [],
+  });
+  await wallet.save();
+
+  // Associate the wallet with the user
+  user.wallet = wallet._id;
   await user.save();
 
   // Generate an authentication token
