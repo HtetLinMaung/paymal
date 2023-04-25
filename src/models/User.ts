@@ -7,6 +7,7 @@ export interface IUser extends Document {
   pin: string;
   phoneNumber: string;
   wallet: string;
+  otpVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +33,10 @@ const userSchema = new Schema(
     wallet: {
       type: Schema.Types.ObjectId,
       ref: "Wallet",
+    },
+    otpVerified: {
+      type: Schema.Types.Boolean,
+      default: false,
     },
   },
   {

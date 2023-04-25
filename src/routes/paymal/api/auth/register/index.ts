@@ -4,6 +4,8 @@ import bcrypt from "bcrypt";
 import User from "../../../../../models/User";
 import connectMongoose from "../../../../../utils/connect-mongoose";
 import Wallet from "../../../../../models/Wallet";
+import { generateOtp } from "../../../../../utils/generateotp-ts";
+import sendOtp from "../../../../../utils/send-otp";
 
 export default brewBlankExpressFunc(async (req, res) => {
   await connectMongoose();
@@ -20,7 +22,7 @@ export default brewBlankExpressFunc(async (req, res) => {
   }
 
   // Check if the phone number already exists
-  const existingUser = await User.findOne({ phoneNumber });
+  const existingUser = await User.findOne({ phoneNumber, otpVerified: true });
   if (existingUser) {
     throwErrorResponse(409, "Phone number already exists!");
   }
@@ -44,18 +46,21 @@ export default brewBlankExpressFunc(async (req, res) => {
   user.wallet = wallet._id;
   await user.save();
 
-  // Generate an authentication token
-  const payload = { userId: user._id };
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
-  }); // Set the token expiration time as needed
+  // Generate the OTP token
+  const otpDigits = 6;
+  const otpExpiration = "2m"; // 2-minute expiration time
+  const { otp, token } = generateOtp(
+    otpDigits,
+    otpExpiration,
+    process.env.JWT_SECRET
+  );
+  sendOtp(phoneNumber, otp);
 
   res.status(201).json({
     code: 201,
-    message: "Registered successful.",
+    message: "Registration successful. OTP sent to the phone number.",
     data: {
-      token,
-      user,
+      otpToken: token,
     },
   });
 });
